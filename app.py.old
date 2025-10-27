@@ -1,0 +1,102 @@
+import pytchat
+import time
+import os
+import pickle
+
+from googleapiclient.discovery import build
+from google_auth_oauthlib.flow import InstalledAppFlow
+from google.auth.transport.requests import Request
+
+# =========================================================
+# CONFIGURACIÓN
+# =========================================================
+
+VIDEO_ID = "ABSFbMv9wFs"  # reemplaza con el ID del video en vivo
+LIVE_CHAT_ID = "KicKGFVDaTRwa0dfT2hfRUU1N3R3VVRMLXhIURILQUJTRmJNdjl3RnM"  # reemplaza con el ID que obtuviste del otro script
+SCOPES = ["https://www.googleapis.com/auth/youtube.force-ssl"]
+
+# =========================================================
+# AUTENTICACIÓN CON LA CUENTA DEL BOT
+# =========================================================
+
+def get_authenticated_service():
+    creds = None
+    if os.path.exists("token_bot.pickle"):
+        with open("token_bot.pickle", "rb") as token:
+            creds = pickle.load(token)
+    if not creds or not creds.valid:
+        if creds and creds.expired and creds.refresh_token:
+            creds.refresh(Request())
+        else:
+            flow = InstalledAppFlow.from_client_secrets_file("client_secret.json", SCOPES)
+            creds = flow.run_local_server(port=0)
+        with open("token_bot.pickle", "wb") as token:
+            pickle.dump(creds, token)
+    return build("youtube", "v3", credentials=creds)
+
+# =========================================================
+# ENVIAR MENSAJE AL CHAT
+# =========================================================
+
+def send_message(youtube, text):
+    try:
+        request = youtube.liveChatMessages().insert(
+            part="snippet",
+            body={
+                "snippet": {
+                    "liveChatId": LIVE_CHAT_ID,
+                    "type": "textMessageEvent",
+                    "textMessageDetails": {
+                        "messageText": text
+                    }
+                }
+            }
+        )
+        request.execute()
+        print(f"[BOT] → {text}")
+    except Exception as e:
+        print("❌ Error enviando mensaje:", e)
+
+# =========================================================
+# MANEJO DE COMANDOS
+# =========================================================
+
+def handle_command(youtube, author, message):
+    if not message.startswith("!"):
+        return
+    cmd = message.split()[0][1:].lower()
+
+    if cmd == "hola":
+        send_message(youtube, f"¡Hola {author}! 👋")
+    elif cmd == "ping":
+        send_message(youtube, "🏓 Pong!")
+    elif cmd == "edad":
+        send_message(youtube, "Tengo 2 años virtuales 🤖")
+    else:
+        send_message(youtube, f"{author}, no conozco el comando '!{cmd}'")
+
+# =========================================================
+# MAIN LOOP
+# =========================================================
+
+def main():
+    print("🔐 Autenticando bot...")
+    youtube = get_authenticated_service()
+    chat = pytchat.create(video_id=VIDEO_ID)
+    print("✅ Bot conectado. Escuchando el chat...")
+
+    try:
+        while chat.is_alive():
+            for c in chat.get().sync_items():
+                author = c.author.name
+                message = c.message
+                print(f"[{author}] {message}")
+                handle_command(youtube, author, message)
+            time.sleep(0.5)
+    except KeyboardInterrupt:
+        print("🛑 Bot detenido.")
+    finally:
+        chat.terminate()
+
+if __name__ == "__main__":
+    main()

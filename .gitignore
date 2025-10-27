@@ -1,0 +1,6 @@
+client_secret.json
+*.pickle
+*.db
+__pycache__
+.old
+.venv
