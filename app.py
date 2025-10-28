@@ -2,27 +2,36 @@ import pytchat
 import importlib
 import pickle
 import os
+import sys
 import time
 import sqlite3
 from googleapiclient.discovery import build
 from google.oauth2.credentials import Credentials
 from google.auth.transport.requests import Request
 from google_auth_oauthlib.flow import InstalledAppFlow
-
+from datetime import datetime
 import threading
 import traceback
 
 class YouTubeChatBot:
+    MONEDA = "Moneda Calva"
+    MONEDAS = "Monedas Calvas"
+    RECOMPENSA_CADA_X_MINUTOS = 5
+    RECOMPENSA_AUTOMATICA = 20
+    BOT_NAME = "lord_shit"
+
     youtube = None
     live_chat_id = None
+    video_id = None  # El ID del stream
     points_db = None
     scripts = []
     listener_active = True
+    users_last_message_time = {}
+    app_ready = False
 
     # ==============================
     # CONFIGURACIÓN
     # ==============================
-    VIDEO_ID = "UzHCjHecqDc"  # El ID del stream
     TOKEN_FILE = "token_bot.pickle"  # Credenciales OAuth de la cuenta del bot
     DB_PATH = "userPoints.db"
 
@@ -62,7 +71,7 @@ class YouTubeChatBot:
             broadcastType="all"
         )
         response = request.execute()
-        return response["items"][0]["snippet"]["liveChatId"]
+        return response["items"][0]["snippet"]["liveChatId"], response["items"][0]["id"]
 
 
     # ==============================
@@ -86,8 +95,11 @@ class YouTubeChatBot:
         YouTubeChatBot.youtube = YouTubeChatBot.get_authenticated_service()
 
         # Obtener el liveChatId del stream
-        YouTubeChatBot.live_chat_id = YouTubeChatBot.get_stream_live_id()
+        live_chat_id, video_id = YouTubeChatBot.get_stream_live_id()
+        YouTubeChatBot.live_chat_id = live_chat_id
+        YouTubeChatBot.video_id = video_id
         # YouTubeChatBot.live_chat_id = "KicKGFVDaTRwa0dfT2hfRUU1N3R3VVRMLXhIURILQUJTRmJNdjl3RnM"
+        print(f"✅ Conectado al Stream ID: {YouTubeChatBot.video_id}")
         print(f"✅ Conectado al chat ID: {YouTubeChatBot.live_chat_id}")
 
         # Cargar scripts
@@ -95,6 +107,7 @@ class YouTubeChatBot:
 
         # Iniciar el listener del chat
         # YouTubeChatBot.listen_chat()
+        YouTubeChatBot.app_ready = True
         YouTubeChatBot.listen_chat()
 
 
@@ -104,26 +117,32 @@ class YouTubeChatBot:
     # ==============================
     @staticmethod
     def load_scripts():
-        scripts_dir = "scripts"
+        scripts_dir = "scripts/"
         YouTubeChatBot.scripts = []
 
-        for filename in os.listdir(scripts_dir):
-            if filename.endswith(".py") and filename != "__init__.py":
-                module_name = f"{scripts_dir}.{filename[:-3]}"
-                try:
-                    module = importlib.import_module(module_name)
-                    if hasattr(module, "command_listener"):
-                        YouTubeChatBot.scripts.append(module)
-                        print(f"✅ Script cargado: {filename}")
-                except Exception as e:
-                    print(f"⚠️ Error cargando {filename}: {e}")
+        for scriptname in os.listdir(scripts_dir): # /scripts
+            if os.path.isdir(scripts_dir+scriptname) and scriptname != "__pycache__":
+                for filename in os.listdir(scripts_dir+scriptname): # /scripts/[nombre script]
+                    if filename.endswith(".py") and filename != "__init__.py": # /scripts/[nombre script]/[nombre].py
+                        module_name = f"{scripts_dir[:-1]}.{scriptname}.{filename[:-3]}"
+                        try:
+                            if module_name in sys.modules:
+                                module = sys.modules[module_name]
+                                importlib.reload(module)
+                                print(f"♻️ Script recargado: {filename}")
+                            module = importlib.import_module(module_name)
+                            if hasattr(module, "command_listener"):
+                                YouTubeChatBot.scripts.append(module)
+                                print(f"✅ Script cargado: {filename}")
+                        except Exception as e:
+                            print(f"⚠️ Error cargando {filename}: {e}")
 
     # ==============================
     # ESCUCHAR CHAT
     # ==============================
     @staticmethod
     def listen_chat():
-        chat = pytchat.create(video_id=YouTubeChatBot.VIDEO_ID)
+        chat = pytchat.create(video_id=YouTubeChatBot.video_id)
         print("🤖 Escuchando mensajes en el chat...")
 
         while chat.is_alive() and YouTubeChatBot.listener_active:
@@ -131,16 +150,53 @@ class YouTubeChatBot:
                 author = c.author.name
                 message = c.message.strip()
 
-                print(f"[{author}] {message}")
-
-                # Llamar a todos los scripts
-                for script in YouTubeChatBot.scripts:
-                    try:
-                        script.command_listener(message, author, YouTubeChatBot.points_db, YouTubeChatBot)
-                    except Exception as e:
-                        print(f"⚠️ Error en {script.__name__}: {e}")
+                # print(f"[{author}] {message}")
+                if author != YouTubeChatBot.BOT_NAME:
+                    YouTubeChatBot.users_last_message_time[author] = time.time()
+                    # Llamar a todos los scripts
+                    for script in YouTubeChatBot.scripts:
+                        try:
+                            script.command_listener(message, author, YouTubeChatBot.points_db, YouTubeChatBot)
+                        except Exception as e:
+                            print(f"⚠️ Error en {script.__name__}: {e}")
 
             time.sleep(0.2)
+
+    # ==============================
+    # REPARTIR PUNTOS CADA 5 MINUTOS
+    # ==============================
+    @staticmethod
+    def reward_active_users():
+        print(F"🎯 Sistema de recompensas iniciado (cada {YouTubeChatBot.RECOMPENSA_CADA_X_MINUTOS} minutos).")
+        lastMinuteRewarded = 0
+        while YouTubeChatBot.listener_active:
+            now = datetime.now()
+            minute = now.minute
+
+            # Si estamos justo en un múltiplo de 5 minutos (00, 05, 10, 15...)
+            if minute % 5 == 0 and lastMinuteRewarded != minute:
+                lastMinuteRewarded = minute
+                cutoff_time = time.time() - 5 * 60  # Hace 5 minutos
+                rewarded_users = []
+
+                for user, last_msg_time in list(YouTubeChatBot.users_last_message_time.items()):
+                    if last_msg_time >= cutoff_time:
+                        YouTubeChatBot.addPoints(user, 20)
+                        rewarded_users.append(user)
+
+                if rewarded_users:
+                    print(f"{now.hour}:{now.minute} Recompensados {len(rewarded_users)} usuarios activos ({', '.join(rewarded_users)}).")
+                    try:
+                        YouTubeChatBot.send_stream_message(F"🎁 ¡ {YouTubeChatBot.RECOMPENSA_AUTOMATICA} {YouTubeChatBot.MONEDAS} para los usuarios activos del chat!")
+                    except Exception:
+                        pass
+                else:
+                    print(f"{now.hour}:{now.minute} No hay usuarios activos en los últimos 5 minutos.")
+
+            # Esperar 10 segundos y volver a verificar
+            time.sleep(10)
+
+
 
     # ==============================
     # ENVIAR MENSAJE AL CHAT
@@ -202,8 +258,10 @@ class YouTubeChatBot:
         Lanza una consola de comandos en un hilo aparte.
         Permite ejecutar código dinámico con exec() en tiempo real.
         """
-        time.sleep(5)
-        print("🖥️ Consola lista. Escribe código Python (o 'exit' para salir).")
+        while not YouTubeChatBot.app_ready:
+            time.sleep(5)
+        time.sleep(2)
+        print("🖥️ Consola lista ('Bot.stop()' para salir).")
         while True:
             try:
                 cmd = input(">>> ").replace("Bot.", "YouTubeChatBot.")
@@ -226,8 +284,9 @@ class YouTubeChatBot:
                 break
 if __name__ == "__main__":
     # Iniciar la consola en un hilo separado
-    console_thread = threading.Thread(target=YouTubeChatBot.console_loop, daemon=True)
-    console_thread.start()
+    threading.Thread(target=YouTubeChatBot.console_loop, daemon=True).start()
+
+    threading.Thread(target=YouTubeChatBot.reward_active_users, daemon=True).start()
 
     # Ejecutar el bot en el hilo principal (pytchat necesita esto)
     YouTubeChatBot.start()
