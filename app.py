@@ -142,26 +142,30 @@ class YouTubeChatBot:
     # ==============================
     @staticmethod
     def listen_chat():
-        chat = pytchat.create(video_id=YouTubeChatBot.video_id)
-        print("🤖 Escuchando mensajes en el chat...")
+        while YouTubeChatBot.listener_active:
+            try:
+                print("🤖 Escuchando mensajes en el chat...")
+                chat = pytchat.create(video_id=YouTubeChatBot.video_id)
+                while chat.is_alive() and YouTubeChatBot.listener_active:
+                    for c in chat.get().sync_items():
+                        author = c.author.name
+                        message = c.message.strip()
 
-        while chat.is_alive() and YouTubeChatBot.listener_active:
-            for c in chat.get().sync_items():
-                author = c.author.name
-                message = c.message.strip()
+                        # print(f"[{author}] {message}")
+                        if author != YouTubeChatBot.BOT_NAME:
+                            YouTubeChatBot.users_last_message_time[author] = time.time()
+                            # Llamar a todos los scripts
+                            for script in YouTubeChatBot.scripts:
+                                try:
+                                    script.command_listener(message, author, YouTubeChatBot.points_db, YouTubeChatBot)
+                                except Exception as e:
+                                    print(f"⚠️ Error en {script.__name__}: {e}")
 
-                # print(f"[{author}] {message}")
-                if author != YouTubeChatBot.BOT_NAME:
-                    YouTubeChatBot.users_last_message_time[author] = time.time()
-                    # Llamar a todos los scripts
-                    for script in YouTubeChatBot.scripts:
-                        try:
-                            script.command_listener(message, author, YouTubeChatBot.points_db, YouTubeChatBot)
-                        except Exception as e:
-                            print(f"⚠️ Error en {script.__name__}: {e}")
-
-            time.sleep(0.2)
-
+                    time.sleep(0.2)
+            except Exception as e:
+                print(f"💥 Error en pytchat: {e}")
+                print("🔁 Reiniciando conexión en 10 segundos...")
+                time.sleep(10)
     # ==============================
     # REPARTIR PUNTOS CADA 5 MINUTOS
     # ==============================
