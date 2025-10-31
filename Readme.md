@@ -1,7 +1,7 @@
 # 🤖Comandos de Chatbot de YouTube
 Ejecuta comandos para obtener información del stream, minijuegos, etc. Alguien llamado **lord_shit** te responderá...
 
-#### Comandos disponibles
+## Comandos disponibles
 - **!comandos**: Lista de comandos disponibles
 - **!calva**: Me das un beso en la calva y suena algo!!
 - **!led [color]**: (Solo en Navidad). Usa este comando para cambiar el color de los leds de mi gorro de navidad. Tiene un cooldown de uso de 5 minutos.
@@ -26,6 +26,6 @@ Ejecuta comandos para obtener información del stream, minijuegos, etc. Alguien 
 		- **destacar [mensaje]**: Destaca un mensaje en la pantalla. El mensaje se verá en los demás servicios y se quedará guardado en el vídeo, no solo en el chat. (Ejemplo: **!canjear destacar Hola, quiero salir en el stream**)
 			- **Coste**: 500 Monedas Calvas
 
-#### Sistema de Monedas (Monedas Calvas)
+## Sistema de Monedas (Monedas Calvas)
 Cada usuario tiene sus propias Monedas Calvas, que se consiguen automáticamente cada 5 minutos solo **si has interactuado en el chat en esos 5 minutos**. Con solo escribir 1 vez en esos 5 minutos, **conseguirás 20 Monedas Calvas**. 
 ‼️Estas monedas solo se usarán dentro del stream y se podrán canjear por **acciones en el propio stream**, pero **nunca se podrán canjear por bienes** (dinero, skins de juego, claves de juegos, etc). En resumen, **no puedes comprar ni vender estas monedas**, solo son monedas de minijuegos‼️
