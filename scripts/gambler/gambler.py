@@ -4,7 +4,7 @@ import time
 
 
 COMANDOS = ["!gamble", "!apuesta", "!gmb"]
-COOLDOWN = 60 # Segundos
+COOLDOWN = 5*60 # Segundos
 
 slots = ["❤️", "😎", "⭐", "👽"]
 
