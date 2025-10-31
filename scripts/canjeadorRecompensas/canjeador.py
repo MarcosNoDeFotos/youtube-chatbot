@@ -34,22 +34,25 @@ def destacarMensaje(userId, mensaje, horaEjecucionComando, bot):
 def command_listener(message:str, author:str, db, bot):
     msgSplitted = message.lower().split(" ")
     if msgSplitted[0] == COMANDO_CANJEAR: # El funcionamiento es !canjear [recompensa]
-        horaEjecucionComando = time()
-        diferenciaCooldown = 0
-        enCooldown = False
-        if author in ultimo_uso.keys():
-            diferenciaCooldown = horaEjecucionComando - ultimo_uso[author]
-            enCooldown = diferenciaCooldown < COOLDOWN
-        if msgSplitted.__len__() > 1 and (author not in ultimo_uso.keys() or not enCooldown):
-            canjeo = msgSplitted[1].lower()
-            puntos = bot.getPoints(author)
-            if COSTES_CANJEOS.keys().__contains__(canjeo):
-                if puntos >= COSTES_CANJEOS[canjeo]:
-                    if canjeo == "susto":
-                        reproducirSusto(author, horaEjecucionComando, bot)
-                    if canjeo == "destacar" and msgSplitted.__len__() > 2:
-                        destacarMensaje(author, message.replace(COMANDO_CANJEAR, "").replace("destacar", "").strip(), horaEjecucionComando, bot)
-                else:
-                    bot.send_stream_message(author+", necesitas "+ str(COSTES_CANJEOS[canjeo])+" "+bot.MONEDAS+" para canjearlo, y tienes "+str(puntos))
-        if enCooldown:
-            bot.send_stream_message("Espera "+str(int(COOLDOWN-round(diferenciaCooldown)))+" segundos antes de volver a canjear una recompensa")
+        if msgSplitted.__len__() == 1:
+            bot.send_stream_message(f"!canjear [recompensa]: Usa este comando para canjear una recompensa por {bot.MONEDAS}. Recompensas disponibles: susto, destacar [mensaje]. Puedes ver más información en la descripción del stream")
+        else:
+            horaEjecucionComando = time()
+            diferenciaCooldown = 0
+            enCooldown = False
+            if author in ultimo_uso.keys():
+                diferenciaCooldown = horaEjecucionComando - ultimo_uso[author]
+                enCooldown = diferenciaCooldown < COOLDOWN
+            if author not in ultimo_uso.keys() or not enCooldown:
+                canjeo = msgSplitted[1].lower()
+                puntos = bot.getPoints(author)
+                if COSTES_CANJEOS.keys().__contains__(canjeo):
+                    if puntos >= COSTES_CANJEOS[canjeo]:
+                        if canjeo == "susto":
+                            reproducirSusto(author, horaEjecucionComando, bot)
+                        if canjeo == "destacar" and msgSplitted.__len__() > 2:
+                            destacarMensaje(author, message.replace(COMANDO_CANJEAR, "").replace("destacar", "").strip(), horaEjecucionComando, bot)
+                    else:
+                        bot.send_stream_message(author+", necesitas "+ str(COSTES_CANJEOS[canjeo])+" "+bot.MONEDAS+" para canjearlo, y tienes "+str(puntos))
+            if enCooldown:
+                bot.send_stream_message("Espera "+str(int(COOLDOWN-round(diferenciaCooldown)))+" segundos antes de volver a canjear una recompensa")
