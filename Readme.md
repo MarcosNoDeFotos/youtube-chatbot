@@ -29,3 +29,6 @@ Ejecuta comandos para obtener información del stream, minijuegos, etc. Alguien 
 ## Sistema de Monedas (Monedas Calvas)
 Cada usuario tiene sus propias Monedas Calvas, que se consiguen automáticamente cada 5 minutos solo **si has interactuado en el chat en esos 5 minutos**. Con solo escribir 1 vez en esos 5 minutos, **conseguirás 20 Monedas Calvas**. 
 ‼️Estas monedas solo se usarán dentro del stream y se podrán canjear por **acciones en el propio stream**, pero **nunca se podrán canjear por bienes** (dinero, skins de juego, claves de juegos, etc). En resumen, **no puedes comprar ni vender estas monedas**, solo son monedas de minijuegos‼️
+Puedes navegar por este repositorio para comprobar cómo está hecho el sistema de monedas. 
+En app.py se reparten 20 monedas cada 5 minutos a los usuarios que han escrito en el chat en esos 5 minutos
+Dentro de scripts/gambler/gambler.py, podrás ver cómo funciona la apuesta
