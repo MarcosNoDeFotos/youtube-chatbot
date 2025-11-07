@@ -3,6 +3,7 @@ import importlib
 import pickle
 import os
 import sys
+import requests
 import time
 import sqlite3
 from googleapiclient.discovery import build
@@ -19,7 +20,7 @@ class YouTubeChatBot:
     RECOMPENSA_CADA_X_MINUTOS = 5
     RECOMPENSA_AUTOMATICA = 20
     BOT_NAME = "lord_shit"
-
+    SERVER_REPRODUCCION_SONIDO = "http://192.168.1.189:5000"
     youtube = None
     live_chat_id = None
     video_id = None  # El ID del stream
@@ -226,6 +227,9 @@ class YouTubeChatBot:
         except Exception as e:
             print(f"⚠️ Error enviando mensaje: {e}")
 
+    @staticmethod
+    def reproducirSonido(sonido):
+        requests.get(YouTubeChatBot.SERVER_REPRODUCCION_SONIDO+"/reproducirSonido?identificador="+sonido)
     @staticmethod
     def addPoints(user, amount):
         with sqlite3.connect(YouTubeChatBot.DB_PATH) as conn:

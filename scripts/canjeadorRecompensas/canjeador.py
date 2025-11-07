@@ -1,7 +1,6 @@
 import requests
 from time import time
 COMANDO_CANJEAR = "!canjear"
-SERVER_REPRODUCCION_SONIDO = "http://192.168.1.189:5000"
 SERVER_CONTROL = "http://192.168.1.188:5000"
 COSTES_CANJEOS = {
     "susto" : 200,
@@ -14,7 +13,7 @@ ultimo_uso = {}
 
 def reproducirSusto(userId, horaEjecucionComando, bot):
     global ultimo_uso
-    requests.get(SERVER_REPRODUCCION_SONIDO+"/reproducirSonido?identificador=susto")
+    bot.reproducirSonido("susto")
     ultimo_uso[userId] = horaEjecucionComando
     coste = COSTES_CANJEOS["susto"]
     bot.removePoints(userId, coste)
