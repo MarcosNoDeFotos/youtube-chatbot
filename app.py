@@ -19,7 +19,7 @@ class YouTubeChatBot:
     MONEDAS = "Monedas Calvas"
     RECOMPENSA_CADA_X_MINUTOS = 5
     RECOMPENSA_AUTOMATICA = 20
-    BOT_NAME = "lord_shit"
+    BOT_NAME = "lord_shit_mndf"
     SERVER_REPRODUCCION_SONIDO = "http://192.168.1.189:5000"
     youtube = None
     live_chat_id = None

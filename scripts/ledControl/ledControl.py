@@ -35,7 +35,7 @@ def command_listener(message:str, author:str, db, bot):
     if msgSplitted[0].lower() in COMANDOS:
         if msgSplitted.__len__() >= 2:
             color = msgSplitted[1]
-            efecto = "static"
+            efecto = "loop"
             if msgSplitted.__len__() == 3 and msgSplitted[2] in efectosValidos:
                 efecto = msgSplitted[2]
             if str(color).strip()!="help":
