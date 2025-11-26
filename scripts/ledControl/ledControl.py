@@ -34,7 +34,9 @@ def command_listener(message:str, author:str, db, bot):
     global lastTimeExecuted
     msgSplitted = message.lower().split(" ")
     if msgSplitted[0].lower() in COMANDOS:
-        if msgSplitted.__len__() >= 2:
+        if msgSplitted.__len__() == 1 or (msgSplitted.__len__() == 2 and msgSplitted[1] == "help"):
+            bot.send_stream_message(f"!leds [color]: ¡Usa este comando para cambiar el color de mi gorro! Colores disponibles: {', '.join(coloresValidos.keys())}")
+        if msgSplitted.__len__() == 2:
             color = msgSplitted[1]
             efecto = "loop"
             if str(color).strip()!="help":
@@ -57,5 +59,3 @@ def command_listener(message:str, author:str, db, bot):
 
                 else:
                     bot.send_stream_message(f"Que me vas a fundir las luces!! Espérate un ratico ({int(COOLDOWN-(time()-lastTimeExecuted))}s)")
-            else:
-                bot.send_stream_message(f"!leds [color]: ¡Usa este comando para cambiar el color de mi gorro! Colores disponibles: {', '.join(coloresValidos.keys())}")
