@@ -16,6 +16,7 @@ coloresValidos = {
     "amarillo" : "214,179",
     "furcia": "230,0,111",
     "rainbow": "0,0,0",
+    "blanco": "255,255,255",
     "apagado": "0,0,0",
 }
 
@@ -36,8 +37,6 @@ def command_listener(message:str, author:str, db, bot):
         if msgSplitted.__len__() >= 2:
             color = msgSplitted[1]
             efecto = "loop"
-            if msgSplitted.__len__() == 3 and msgSplitted[2] in efectosValidos:
-                efecto = msgSplitted[2]
             if str(color).strip()!="help":
                 if lastTimeExecuted == 0 or time()-lastTimeExecuted >= COOLDOWN:
                     lastTimeExecuted = time()
