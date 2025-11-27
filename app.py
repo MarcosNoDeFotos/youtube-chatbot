@@ -45,17 +45,37 @@ class YouTubeChatBot:
     def get_authenticated_service():
         SCOPES = ["https://www.googleapis.com/auth/youtube.force-ssl"]
         creds = None
+
+        # Cargar si existe
         if os.path.exists("token_bot.pickle"):
             with open("token_bot.pickle", "rb") as token:
                 creds = pickle.load(token)
+
+        # Si no es válida → reautenticar
         if not creds or not creds.valid:
             if creds and creds.expired and creds.refresh_token:
-                creds.refresh(Request())
-            else:
-                flow = InstalledAppFlow.from_client_secrets_file("client_secret.json", SCOPES)
-                creds = flow.run_local_server(port=0)
+                try:
+                    creds.refresh(Request())
+                except Exception as e:
+                    print("⚠️ Error refrescando token, regenerando autorización…", e)
+                    creds = None
+
+            # Si no se pudo refrescar → pedir login
+            if not creds or not creds.valid:
+                flow = InstalledAppFlow.from_client_secrets_file(
+                    "client_secret.json",
+                    SCOPES
+                )
+                creds = flow.run_local_server(
+                    port=0,
+                    access_type="offline",
+                    prompt="consent"
+                )
+
+            # Guardar token nuevo
             with open("token_bot.pickle", "wb") as token:
                 pickle.dump(creds, token)
+
         return build("youtube", "v3", credentials=creds)
 
     @staticmethod
@@ -153,7 +173,7 @@ class YouTubeChatBot:
                         message = c.message.strip()
 
                         # print(f"[{author}] {message}")
-                        if author.__contains__(YouTubeChatBot.BOT_NAME.replace("@", "")):
+                        if not author.__contains__(YouTubeChatBot.BOT_NAME.replace("@", "")):
                             YouTubeChatBot.users_last_message_time[author] = time.time()
                             # Llamar a todos los scripts
                             for script in YouTubeChatBot.scripts:
@@ -192,7 +212,7 @@ class YouTubeChatBot:
                 if rewarded_users:
                     print(f"{now.hour}:{now.minute} Recompensados {len(rewarded_users)} usuarios activos ({', '.join(rewarded_users)}).")
                     try:
-                        YouTubeChatBot.send_stream_message(F"🎁 ¡ {YouTubeChatBot.RECOMPENSA_AUTOMATICA} {YouTubeChatBot.MONEDAS} para los usuarios activos del chat!")
+                        YouTubeChatBot.send_stream_message(F"🎁 ¡{YouTubeChatBot.RECOMPENSA_AUTOMATICA} {YouTubeChatBot.MONEDAS} para los usuarios activos del chat!")
                     except Exception:
                         pass
                 else:
