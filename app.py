@@ -81,18 +81,45 @@ class YouTubeChatBot:
     @staticmethod
     def get_stream_live_id():
         SCOPES = ["https://www.googleapis.com/auth/youtube.readonly"]
-        input("Inicia sesión con la cuenta de YouTube en la que se inicia el stream para sacar el Live Chat ID (pulsa intro)")
-        flow = InstalledAppFlow.from_client_secrets_file("client_secret.json", SCOPES)
-        creds = flow.run_local_server(port=0)
+        creds = None
+
+        # 1. Cargar credenciales si existen
+        if os.path.exists("live_credentials.pickle"):
+            with open("live_credentials.pickle", "rb") as token:
+                creds = pickle.load(token)
+
+        # 2. Si no existen o no son válidas → pedir autenticación
+        if not creds or not creds.valid:
+            input("Inicia sesión con la cuenta de YouTube en la que se inicia el stream para sacar el Live Chat ID (pulsa intro)")
+            if creds and creds.expired and creds.refresh_token:
+                try:
+                    creds.refresh(Request())
+                except Exception:
+                    # Refresh falló → pedir login otra vez
+                    flow = InstalledAppFlow.from_client_secrets_file("client_secret.json", SCOPES)
+                    creds = flow.run_local_server(port=0)
+            else:
+                # No hay refresh token → login obligatorio
+                flow = InstalledAppFlow.from_client_secrets_file("client_secret.json", SCOPES)
+                creds = flow.run_local_server(port=0)
+
+            # Guardar las credenciales para futuras ejecuciones
+            with open("live_credentials.pickle", "wb") as token:
+                pickle.dump(creds, token)
+
+        # 3. Crear el servicio
         youtube = build("youtube", "v3", credentials=creds)
 
+        # 4. Consultar el directo activo
         request = youtube.liveBroadcasts().list(
             part="snippet",
             broadcastStatus="active",
             broadcastType="all"
         )
         response = request.execute()
+
         return response["items"][0]["snippet"]["liveChatId"], response["items"][0]["id"]
+
 
 
     # ==============================
