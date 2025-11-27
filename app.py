@@ -5,6 +5,7 @@ import os
 import sys
 import requests
 import time
+import json
 import sqlite3
 from googleapiclient.discovery import build
 from google.oauth2.credentials import Credentials
@@ -13,6 +14,8 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from datetime import datetime
 import threading
 import traceback
+
+CURRENT_PATH = os.path.dirname(__file__).replace("\\", "/") + "/"
 
 class YouTubeChatBot:
     MONEDA = "Moneda Calva"
@@ -29,7 +32,7 @@ class YouTubeChatBot:
     listener_active = True
     users_last_message_time = {}
     app_ready = False
-
+    autor_ultimo_mensaje = None
     # ==============================
     # CONFIGURACIÓN
     # ==============================
@@ -198,7 +201,7 @@ class YouTubeChatBot:
                     for c in chat.get().sync_items():
                         author = str(c.author.name)
                         message = c.message.strip()
-
+                        YouTubeChatBot.autor_ultimo_mensaje = author
                         # print(f"[{author}] {message}")
                         if not author.__contains__(YouTubeChatBot.BOT_NAME.replace("@", "")):
                             YouTubeChatBot.users_last_message_time[author] = time.time()
@@ -208,7 +211,6 @@ class YouTubeChatBot:
                                     script.command_listener(message, author, YouTubeChatBot.points_db, YouTubeChatBot)
                                 except Exception as e:
                                     print(f"⚠️ Error en {script.__name__}: {e}")
-
                     time.sleep(0.2)
             except Exception as e:
                 print(f"💥 Error en pytchat: {e}")
@@ -248,6 +250,18 @@ class YouTubeChatBot:
             # Esperar 10 segundos y volver a verificar
             time.sleep(10)
 
+    # ==============================
+    # MENSAJES AUTOMÁTICOS DEL BOT EN EL CHAT
+    # ==============================
+    @staticmethod
+    def mensajes_automaticos(mensaje:str, segundos_cooldown:float):
+        print(F"🚩 Mensaje automático \"{mensaje[0:25]}...\" cada {segundos_cooldown}s")
+        while YouTubeChatBot.listener_active:
+            time.sleep(segundos_cooldown)
+            #Si alguien ha enviado un mensaje y no ha sido el bot el último que ha enviado un mensaje
+            if YouTubeChatBot.autor_ultimo_mensaje and not YouTubeChatBot.autor_ultimo_mensaje.__contains__(YouTubeChatBot.BOT_NAME.replace("@", "")):
+                YouTubeChatBot.send_stream_message(mensaje)
+                # print(mensaje)
 
 
     # ==============================
@@ -340,8 +354,17 @@ class YouTubeChatBot:
 if __name__ == "__main__":
     # Iniciar la consola en un hilo separado
     threading.Thread(target=YouTubeChatBot.console_loop, daemon=True).start()
-
     threading.Thread(target=YouTubeChatBot.reward_active_users, daemon=True).start()
+
+    #Mensajes automáticos enviados por el bot
+    mensajesAutomaticosPath = CURRENT_PATH+"mensajes_automaticos.json"
+    if os.path.exists(mensajesAutomaticosPath):
+        with open(mensajesAutomaticosPath, encoding="utf-8") as mensajesAutomaticosFile:
+            mensajesAutomaticos = json.load(mensajesAutomaticosFile)
+            for mensaje in mensajesAutomaticos:
+                threading.Thread(target=YouTubeChatBot.mensajes_automaticos, args=(mensaje["mensaje"], float(mensaje["cooldown_segundos_envio"])), daemon=True).start()
+    else:
+        print(f"⚠️ No existe el fichero {mensajesAutomaticosPath}. No se enviarán mensajes automáticos")
 
     # Ejecutar el bot en el hilo principal (pytchat necesita esto)
     YouTubeChatBot.start()
