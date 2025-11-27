@@ -149,11 +149,11 @@ class YouTubeChatBot:
                 chat = pytchat.create(video_id=YouTubeChatBot.video_id)
                 while chat.is_alive() and YouTubeChatBot.listener_active:
                     for c in chat.get().sync_items():
-                        author = c.author.name
+                        author = str(c.author.name)
                         message = c.message.strip()
 
                         # print(f"[{author}] {message}")
-                        if author != YouTubeChatBot.BOT_NAME:
+                        if author.__contains__(YouTubeChatBot.BOT_NAME.replace("@", "")):
                             YouTubeChatBot.users_last_message_time[author] = time.time()
                             # Llamar a todos los scripts
                             for script in YouTubeChatBot.scripts:
