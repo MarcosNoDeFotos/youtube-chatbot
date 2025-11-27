@@ -5,6 +5,7 @@ import os
 import sys
 import requests
 import time
+import json
 import sqlite3
 from googleapiclient.discovery import build
 from google.oauth2.credentials import Credentials
@@ -14,12 +15,14 @@ from datetime import datetime
 import threading
 import traceback
 
+CURRENT_PATH = os.path.dirname(__file__).replace("\\", "/") + "/"
+
 class YouTubeChatBot:
     MONEDA = "Moneda Calva"
     MONEDAS = "Monedas Calvas"
     RECOMPENSA_CADA_X_MINUTOS = 5
     RECOMPENSA_AUTOMATICA = 20
-    BOT_NAME = "lord_shit"
+    BOT_NAME = "lord_shit_mndf"
     SERVER_REPRODUCCION_SONIDO = "http://192.168.1.189:5000"
     youtube = None
     live_chat_id = None
@@ -29,7 +32,7 @@ class YouTubeChatBot:
     listener_active = True
     users_last_message_time = {}
     app_ready = False
-
+    autor_ultimo_mensaje = None
     # ==============================
     # CONFIGURACIÓN
     # ==============================
@@ -45,34 +48,81 @@ class YouTubeChatBot:
     def get_authenticated_service():
         SCOPES = ["https://www.googleapis.com/auth/youtube.force-ssl"]
         creds = None
+
+        # Cargar si existe
         if os.path.exists("token_bot.pickle"):
             with open("token_bot.pickle", "rb") as token:
                 creds = pickle.load(token)
+
+        # Si no es válida → reautenticar
         if not creds or not creds.valid:
             if creds and creds.expired and creds.refresh_token:
-                creds.refresh(Request())
-            else:
-                flow = InstalledAppFlow.from_client_secrets_file("client_secret.json", SCOPES)
-                creds = flow.run_local_server(port=0)
+                try:
+                    creds.refresh(Request())
+                except Exception as e:
+                    print("⚠️ Error refrescando token, regenerando autorización…", e)
+                    creds = None
+
+            # Si no se pudo refrescar → pedir login
+            if not creds or not creds.valid:
+                flow = InstalledAppFlow.from_client_secrets_file(
+                    "client_secret.json",
+                    SCOPES
+                )
+                creds = flow.run_local_server(
+                    port=0,
+                    access_type="offline",
+                    prompt="consent"
+                )
+
+            # Guardar token nuevo
             with open("token_bot.pickle", "wb") as token:
                 pickle.dump(creds, token)
+
         return build("youtube", "v3", credentials=creds)
 
     @staticmethod
     def get_stream_live_id():
         SCOPES = ["https://www.googleapis.com/auth/youtube.readonly"]
-        input("Inicia sesión con la cuenta de YouTube en la que se inicia el stream para sacar el Live Chat ID (pulsa intro)")
-        flow = InstalledAppFlow.from_client_secrets_file("client_secret.json", SCOPES)
-        creds = flow.run_local_server(port=0)
+        creds = None
+
+        # 1. Cargar credenciales si existen
+        if os.path.exists("live_credentials.pickle"):
+            with open("live_credentials.pickle", "rb") as token:
+                creds = pickle.load(token)
+
+        # 2. Si no existen o no son válidas → pedir autenticación
+        if not creds or not creds.valid:
+            input("Inicia sesión con la cuenta de YouTube en la que se inicia el stream para sacar el Live Chat ID (pulsa intro)")
+            if creds and creds.expired and creds.refresh_token:
+                try:
+                    creds.refresh(Request())
+                except Exception:
+                    # Refresh falló → pedir login otra vez
+                    flow = InstalledAppFlow.from_client_secrets_file("client_secret.json", SCOPES)
+                    creds = flow.run_local_server(port=0)
+            else:
+                # No hay refresh token → login obligatorio
+                flow = InstalledAppFlow.from_client_secrets_file("client_secret.json", SCOPES)
+                creds = flow.run_local_server(port=0)
+
+            # Guardar las credenciales para futuras ejecuciones
+            with open("live_credentials.pickle", "wb") as token:
+                pickle.dump(creds, token)
+
+        # 3. Crear el servicio
         youtube = build("youtube", "v3", credentials=creds)
 
+        # 4. Consultar el directo activo
         request = youtube.liveBroadcasts().list(
             part="snippet",
             broadcastStatus="active",
             broadcastType="all"
         )
         response = request.execute()
+
         return response["items"][0]["snippet"]["liveChatId"], response["items"][0]["id"]
+
 
 
     # ==============================
@@ -149,11 +199,11 @@ class YouTubeChatBot:
                 chat = pytchat.create(video_id=YouTubeChatBot.video_id)
                 while chat.is_alive() and YouTubeChatBot.listener_active:
                     for c in chat.get().sync_items():
-                        author = c.author.name
+                        author = str(c.author.name)
                         message = c.message.strip()
-
+                        YouTubeChatBot.autor_ultimo_mensaje = author
                         # print(f"[{author}] {message}")
-                        if author != YouTubeChatBot.BOT_NAME:
+                        if not author.__contains__(YouTubeChatBot.BOT_NAME.replace("@", "")):
                             YouTubeChatBot.users_last_message_time[author] = time.time()
                             # Llamar a todos los scripts
                             for script in YouTubeChatBot.scripts:
@@ -161,7 +211,6 @@ class YouTubeChatBot:
                                     script.command_listener(message, author, YouTubeChatBot.points_db, YouTubeChatBot)
                                 except Exception as e:
                                     print(f"⚠️ Error en {script.__name__}: {e}")
-
                     time.sleep(0.2)
             except Exception as e:
                 print(f"💥 Error en pytchat: {e}")
@@ -192,7 +241,7 @@ class YouTubeChatBot:
                 if rewarded_users:
                     print(f"{now.hour}:{now.minute} Recompensados {len(rewarded_users)} usuarios activos ({', '.join(rewarded_users)}).")
                     try:
-                        YouTubeChatBot.send_stream_message(F"🎁 ¡ {YouTubeChatBot.RECOMPENSA_AUTOMATICA} {YouTubeChatBot.MONEDAS} para los usuarios activos del chat!")
+                        YouTubeChatBot.send_stream_message(F"🎁 ¡{YouTubeChatBot.RECOMPENSA_AUTOMATICA} {YouTubeChatBot.MONEDAS} para los usuarios activos del chat!")
                     except Exception:
                         pass
                 else:
@@ -201,6 +250,18 @@ class YouTubeChatBot:
             # Esperar 10 segundos y volver a verificar
             time.sleep(10)
 
+    # ==============================
+    # MENSAJES AUTOMÁTICOS DEL BOT EN EL CHAT
+    # ==============================
+    @staticmethod
+    def mensajes_automaticos(mensaje:str, segundos_cooldown:float):
+        print(F"🚩 Mensaje automático \"{mensaje[0:25]}...\" cada {segundos_cooldown}s")
+        while YouTubeChatBot.listener_active:
+            time.sleep(segundos_cooldown)
+            #Si alguien ha enviado un mensaje y no ha sido el bot el último que ha enviado un mensaje
+            if YouTubeChatBot.autor_ultimo_mensaje and not YouTubeChatBot.autor_ultimo_mensaje.__contains__(YouTubeChatBot.BOT_NAME.replace("@", "")):
+                YouTubeChatBot.send_stream_message(mensaje)
+                # print(mensaje)
 
 
     # ==============================
@@ -293,8 +354,17 @@ class YouTubeChatBot:
 if __name__ == "__main__":
     # Iniciar la consola en un hilo separado
     threading.Thread(target=YouTubeChatBot.console_loop, daemon=True).start()
-
     threading.Thread(target=YouTubeChatBot.reward_active_users, daemon=True).start()
+
+    #Mensajes automáticos enviados por el bot
+    mensajesAutomaticosPath = CURRENT_PATH+"mensajes_automaticos.json"
+    if os.path.exists(mensajesAutomaticosPath):
+        with open(mensajesAutomaticosPath, encoding="utf-8") as mensajesAutomaticosFile:
+            mensajesAutomaticos = json.load(mensajesAutomaticosFile)
+            for mensaje in mensajesAutomaticos:
+                threading.Thread(target=YouTubeChatBot.mensajes_automaticos, args=(mensaje["mensaje"], float(mensaje["cooldown_segundos_envio"])), daemon=True).start()
+    else:
+        print(f"⚠️ No existe el fichero {mensajesAutomaticosPath}. No se enviarán mensajes automáticos")
 
     # Ejecutar el bot en el hilo principal (pytchat necesita esto)
     YouTubeChatBot.start()
