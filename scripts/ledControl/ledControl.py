@@ -26,14 +26,16 @@ efectosValidos = [
 ]
 
 def enviarColor(color, efecto):
-    requests.post(RGB_ENDPOINT_COLOR, data={"color": color})
-    sleep(2)
+    print(color, efecto)
+    if efecto != "rgbLoco":
+        requests.post(RGB_ENDPOINT_COLOR, data={"color": color})
+        sleep(2)
     requests.post(RGB_ENDPOINT_ANIMACION, data={"animacion": efecto})
 
 def command_listener(message:str, author:str, db, bot):
     global lastTimeExecuted
     msgSplitted = message.lower().split(" ")
-    if msgSplitted[0].lower() in COMANDOS:
+    if msgSplitted[0] in COMANDOS:
         if msgSplitted.__len__() == 1 or (msgSplitted.__len__() == 2 and msgSplitted[1] == "help"):
             bot.send_stream_message(f"!leds [color]: ¡Usa este comando para cambiar el color de mi gorro! Colores disponibles: {', '.join(coloresValidos.keys())}")
         if msgSplitted.__len__() == 2:
@@ -53,9 +55,5 @@ def command_listener(message:str, author:str, db, bot):
                         else:
                             enviarColor(coloresValidos[color], efecto); 
                         bot.send_stream_message(author+" ha cambiado el color de mi gorro!!!")
-                    # elif (str(color).__len__()==7 and str(color)[0:1] == "#" and colorEsHexa):
-                    #     enviarColor(coloresValidos[color]); 
-                    #     bot.send_stream_message(author+" ha cambiado el color de mi gorro!!!")
-
                 else:
                     bot.send_stream_message(f"Que me vas a fundir las luces!! Espérate un ratico ({int(COOLDOWN-(time()-lastTimeExecuted))}s)")
