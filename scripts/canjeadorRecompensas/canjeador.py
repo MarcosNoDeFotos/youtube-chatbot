@@ -31,10 +31,14 @@ def destacarMensaje(userId, mensaje, horaEjecucionComando, bot):
 
 
 def command_listener(message:str, author:str, db, bot):
+    global ultimo_uso
     msgSplitted = message.lower().split(" ")
     if msgSplitted[0] == COMANDO_CANJEAR: # El funcionamiento es !canjear [recompensa]
         if msgSplitted.__len__() == 1:
             bot.send_stream_message(f"!canjear [recompensa]: Usa este comando para canjear una recompensa por {bot.MONEDAS}. Recompensas disponibles: susto, destacar [mensaje]. Puedes ver más información en la descripción del stream")
+        elif msgSplitted.__len__() == 2 and msgSplitted[1] == "reset" and author.lower().replace("@", "") == bot.STREAMER_NAME.lower():
+            ultimo_uso = {}
+            bot.send_stream_message("👌")
         else:
             horaEjecucionComando = time()
             diferenciaCooldown = 0

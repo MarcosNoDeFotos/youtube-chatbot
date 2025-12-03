@@ -4,9 +4,14 @@ Ejecuta comandos para obtener información del stream, minijuegos, etc. Alguien 
 ## Comandos disponibles
 - **!comandos**: Lista de comandos disponibles
 - **!calva**: Me das un beso en la calva y suena algo!!
-- **!led [color]**: (Solo en Navidad). Usa este comando para cambiar el color de los leds de mi gorro de navidad. Tiene un cooldown de uso de 5 minutos.
-	- Colores disponibles: azul, rojo, verde, morado, amarillo, furcia, rainbow, apagado
-	- Ejemplo de uso: **!led azul**, **!led morado**
+- **!led [color] [efecto]**: (Solo en Navidad). Usa este comando para cambiar el color de los leds de mi gorro de navidad. Tiene un cooldown de uso de 5 minutos. Si no usas ningún efecto, por defecto será loop
+	- Colores disponibles: azul, rojo, verde, morado, amarillo, furcia, multicolor, blanco, apagado
+	- Efectos disponibles: static, loop, vuelta, fill, random, destello
+	- Ejemplo de uso: 
+		- **!led azul random**
+		- **!led morado fill**
+		- **!led rojo**
+		- **!led multicolor**
 - **!redes**: Lista de mis redes sociales
 - **!pc**: Especificaciones de mis PCs
 - **!discord**: Mi server de Discord
