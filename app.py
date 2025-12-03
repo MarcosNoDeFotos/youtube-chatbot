@@ -23,6 +23,7 @@ class YouTubeChatBot:
     RECOMPENSA_CADA_X_MINUTOS = 5
     RECOMPENSA_AUTOMATICA = 20
     BOT_NAME = "lord_shit_mndf"
+    STREAMER_NAME = "marcosNoDeFotos"
     SERVER_REPRODUCCION_SONIDO = "http://192.168.1.189:5000"
     youtube = None
     live_chat_id = None
@@ -38,7 +39,6 @@ class YouTubeChatBot:
     # ==============================
     TOKEN_FILE = "token_bot.pickle"  # Credenciales OAuth de la cuenta del bot
     DB_PATH = "userPoints.db"
-
 
 
     # =========================================================
@@ -335,10 +335,13 @@ class YouTubeChatBot:
             try:
                 cmd = input(">>> ").replace("Bot.", "YouTubeChatBot.")
                 if cmd.strip().lower() in ("exit", "quit"):
+                    YouTubeChatBot.stop()
                     break
                 if not cmd.strip():
                     continue
-
+                if cmd.strip().lower() == "reload":
+                    YouTubeChatBot.load_scripts()
+                    continue
                 # Ejecutar el comando en el contexto global del bot
                 try:
                     result = eval(cmd, globals(), locals())

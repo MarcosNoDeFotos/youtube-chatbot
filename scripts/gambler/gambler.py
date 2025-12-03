@@ -12,10 +12,14 @@ ultimo_uso = {}
 
 
 def command_listener(message:str, author:str, db, bot):
+    global ultimo_uso
     msgSplitted = message.lower().split(" ")
     if msgSplitted[0] in COMANDOS:
         if msgSplitted.__len__() == 1 or (msgSplitted.__len__() > 1 and msgSplitted[1] in ["help", "?", "ayuda"]): # Si usa !gamble (sin nada más) o !gamble help
             bot.send_stream_message("Usa !gamble [cantidad]: Apuesta tus "+bot.MONEDAS+" en la tragaperras 🎰. 3 ⭐ = x2.5. 3 emojis iguales = x2. 2 emojis iguales = x1.5. Para consultar tus "+bot.MONEDAS+", usa !monedas")
+        elif msgSplitted.__len__() > 1 and msgSplitted[1] == "reset" and author.lower().replace("@", "") == bot.STREAMER_NAME.lower():
+            ultimo_uso = {}
+            bot.send_stream_message("👌")
         else:
             try:
                 apuesta = int(msgSplitted[1])
@@ -60,5 +64,5 @@ def command_listener(message:str, author:str, db, bot):
                         bot.send_stream_message("Espera "+str(int(COOLDOWN-round(diferenciaCooldown)))+" segundos antes de volver a apostar")
                     else:
                         bot.send_stream_message("No puedes apostar más "+bot.MONEDAS+ " de las que tienes")
-            except:
-                None
+            except Exception as e:
+                print(e)

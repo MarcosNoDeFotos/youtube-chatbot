@@ -1,10 +1,9 @@
 import requests
-from time import time, sleep
+from time import time
 COMANDOS = ["!led", "!leds"]
 COOLDOWN = 5*60 #Segundos
 # COOLDOWN = 2 #Segundos
 RGB_ENDPOINT_COLOR = "http://192.168.1.189:5000/rgb_establecerColor"
-RGB_ENDPOINT_ANIMACION = "http://192.168.1.189:5000/rgb_establecerAnimacion"
 
 lastTimeExecuted = 0
 
@@ -15,45 +14,46 @@ coloresValidos = {
     "morado": "168,0,146",
     "amarillo" : "214,179",
     "furcia": "230,0,111",
-    "rainbow": "0,0,0",
     "blanco": "255,255,255",
     "apagado": "0,0,0",
 }
 
 efectosValidos = [
     "static",
-    "loop"
+    "loop",
+    "vuelta",
+    "fill",
+    "random",
+    "destello",
 ]
 
+
 def enviarColor(color, efecto):
-    print(color, efecto)
-    if efecto != "rgbLoco":
-        requests.post(RGB_ENDPOINT_COLOR, data={"color": color})
-        sleep(2)
-    requests.post(RGB_ENDPOINT_ANIMACION, data={"animacion": efecto})
+    requests.post(RGB_ENDPOINT_COLOR, data={"color": color, "animacion": efecto})
 
 def command_listener(message:str, author:str, db, bot):
     global lastTimeExecuted
     msgSplitted = message.lower().split(" ")
     if msgSplitted[0] in COMANDOS:
         if msgSplitted.__len__() == 1 or (msgSplitted.__len__() == 2 and msgSplitted[1] == "help"):
-            bot.send_stream_message(f"!leds [color]: ¡Usa este comando para cambiar el color de mi gorro! Colores disponibles: {', '.join(coloresValidos.keys())}")
-        if msgSplitted.__len__() == 2:
+            bot.send_stream_message(f"!leds [color] [efecto]: ¡Cambia el color de mi gorro! Efectos válidos: {', '.join(efectosValidos)}. Ejemplo: !leds rojo random")
+        if msgSplitted.__len__() >= 2:
             color = msgSplitted[1]
             efecto = "loop"
-            if str(color).strip()!="help":
+            if msgSplitted.__len__() >= 3:
+                if msgSplitted[2] in efectosValidos:
+                    efecto = msgSplitted[2]
+            if str(color).strip() == "reset" and author.lower().replace("@", "") == bot.STREAMER_NAME.lower():
+                lastTimeExecuted = 0
+                bot.send_stream_message(f"👌")
+            elif str(color).strip()!="help":
                 if lastTimeExecuted == 0 or time()-lastTimeExecuted >= COOLDOWN:
                     lastTimeExecuted = time()
-                    colorEsHexa = True
-                    try:
-                        int(color[1:], 16);
-                    except:
-                        colorEsHexa = False
                     if color in coloresValidos.keys():
-                        if color == "rainbow":
-                            enviarColor("0,0,0", "rgbLoco"); 
-                        else:
-                            enviarColor(coloresValidos[color], efecto); 
+                        enviarColor(coloresValidos[color], efecto); 
+                        bot.send_stream_message(author+" ha cambiado el color de mi gorro!!!")
+                    if color == "multicolor":
+                        enviarColor("", "multicolor")
                         bot.send_stream_message(author+" ha cambiado el color de mi gorro!!!")
                 else:
                     bot.send_stream_message(f"Que me vas a fundir las luces!! Espérate un ratico ({int(COOLDOWN-(time()-lastTimeExecuted))}s)")

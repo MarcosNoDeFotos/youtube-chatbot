@@ -134,10 +134,13 @@ class AnimFill : public Animacion {
 public:
   int stepIndex = 0;
   int ledIzquierda = NUM_LEDS/2-2;
+  int ledIzquierdaInicial = ledIzquierda;
+  int ledDerecha = ledIzquierda+1;
+  int ledDerechaInicial = ledDerecha;
   int steps = NUM_LEDS/2;
-  int ledDerecha = ledIzquierda+2;
   bool fadingIn = true;
-  unsigned long stepInterval = 90; // ms entre pasos de fade (ajustable)
+  int cantidadLeds = 8;
+  unsigned long stepInterval = 60; // ms entre pasos de fade (ajustable)
 
   AnimFill() { intervalo = stepInterval; }
 
@@ -145,8 +148,8 @@ public:
     stepIndex = 0;
     fadingIn = true;
     lastStep = 0;
-    ledIzquierda = NUM_LEDS/2-2;
-    ledDerecha = ledIzquierda+2;
+    ledIzquierda = ledIzquierdaInicial;
+    ledDerecha = ledDerechaInicial;
     leds.clear();
     leds.show();
   }
@@ -173,11 +176,24 @@ public:
         leds.clear();
       }
     }
+    leds.clear();
     if(ledIzquierda >= 0){
-      leds.setPixelColor(ledIzquierda, leds.Color(colorActual.getR(), colorActual.getG(), colorActual.getB()));
+      for (int i = 0; i < cantidadLeds; i++) {
+        int led = ledIzquierda-i;
+        if (led < 0) {
+          led = 0;
+        }
+        leds.setPixelColor(led, leds.Color(colorActual.getR(), colorActual.getG(), colorActual.getB()));
+      }
     }
     if(ledDerecha < NUM_LEDS){
-      leds.setPixelColor(ledDerecha, leds.Color(colorActual.getR(), colorActual.getG(), colorActual.getB()));
+      for (int i = 0; i < cantidadLeds; i++) {
+        int led = ledDerecha+i;
+        if (led > NUM_LEDS) {
+          led = NUM_LEDS;
+        }
+        leds.setPixelColor(led, leds.Color(colorActual.getR(), colorActual.getG(), colorActual.getB()));
+      }
     }
     leds.show();
   }
