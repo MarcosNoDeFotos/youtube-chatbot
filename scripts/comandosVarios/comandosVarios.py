@@ -4,7 +4,7 @@ COMANDOS = {
     "!pc": "Pc Gaming: https://es.pc-builder.io/builds/D5CNOrHv | PC Streaming: https://es.pc-builder.io/builds/i6iKN0kj",
     "!donar": "¿Quieres ayudarme? Te lo agradezco mucho!! Visita este enlace https://streamlabs.com/marcosnodefotos o hazlo por PayPal (https://paypal.me/marcosspg)",
     "!discord": "Entra en mi discord y entérate de novedades y demás. Te espero allí!! https://discord.gg/e427a5r",
-    "!drops": "Skins gratis en https://kick.com/marcosnodefotos de una roca, horno, puerta de HQ y traje de radiación verde to chulo! Más info en https://kick.facepunch.com",
+    "!drops": "Skins gratis de navidad en https://kick.com/marcosnodefotos y https://www.twitch.tv/marcosnodefotos Más info en https://kick.facepunch.com y https://twitch.facepunch.com",
     "!comandos": "!redes, !leds, !pc, !donar, !discord, !calva, !coomo, !gamble. ¿Cómo funcionan los comandos y Monedas Calvas?: https://github.com/MarcosNoDeFotos/youtube-chatbot/blob/main/Readme.md",
 }
 

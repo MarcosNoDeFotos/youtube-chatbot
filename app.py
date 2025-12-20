@@ -14,6 +14,9 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from datetime import datetime
 import threading
 import traceback
+import urllib3
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
 
 CURRENT_PATH = os.path.dirname(__file__).replace("\\", "/") + "/"
 
@@ -24,7 +27,7 @@ class YouTubeChatBot:
     RECOMPENSA_AUTOMATICA = 20
     BOT_NAME = "lord_shit_mndf"
     STREAMER_NAME = "marcosNoDeFotos"
-    SERVER_REPRODUCCION_SONIDO = "http://192.168.1.189:5000"
+    SERVER_REPRODUCCION_SONIDO = "https://192.168.1.189"
     youtube = None
     live_chat_id = None
     video_id = None  # El ID del stream
@@ -290,7 +293,7 @@ class YouTubeChatBot:
 
     @staticmethod
     def reproducirSonido(sonido):
-        requests.get(YouTubeChatBot.SERVER_REPRODUCCION_SONIDO+"/reproducirSonido?identificador="+sonido)
+        requests.get(YouTubeChatBot.SERVER_REPRODUCCION_SONIDO+"/reproducirSonido?identificador="+sonido, verify=False)
     @staticmethod
     def addPoints(user, amount):
         with sqlite3.connect(YouTubeChatBot.DB_PATH) as conn:

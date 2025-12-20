@@ -1,7 +1,12 @@
 import requests
 from time import time
+
+import urllib3
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
+
 COMANDO_CANJEAR = "!canjear"
-SERVER_CONTROL = "http://192.168.1.188:5000"
+SERVER_CONTROL = "https://192.168.1.188"
 COSTES_CANJEOS = {
     "susto" : 200,
     "destacar" : 500
@@ -22,7 +27,7 @@ def reproducirSusto(userId, horaEjecucionComando, bot):
 
 def destacarMensaje(userId, mensaje, horaEjecucionComando, bot):
     global ultimo_uso
-    requests.get(SERVER_CONTROL+"/destacarMensaje?user="+userId+"&origen=youtube&mensaje="+mensaje)
+    requests.get(SERVER_CONTROL+"/destacarMensaje?user="+userId+"&origen=youtube&mensaje="+mensaje, verify=False)
     ultimo_uso[userId] = horaEjecucionComando
     coste = COSTES_CANJEOS["destacar"]
     bot.removePoints(userId, coste)

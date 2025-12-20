@@ -1,9 +1,12 @@
 import requests
 from time import time
+import urllib3
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
 COMANDOS = ["!led", "!leds"]
 COOLDOWN = 5*60 #Segundos
 # COOLDOWN = 2 #Segundos
-RGB_ENDPOINT_COLOR = "http://192.168.1.189:5000/rgb_establecerColor"
+RGB_ENDPOINT_COLOR = "https://192.168.1.189/rgb_establecerColor"
 
 lastTimeExecuted = 0
 
@@ -29,7 +32,7 @@ efectosValidos = [
 
 
 def enviarColor(color, efecto):
-    requests.post(RGB_ENDPOINT_COLOR, data={"color": color, "animacion": efecto})
+    requests.post(RGB_ENDPOINT_COLOR, data={"color": color, "animacion": efecto}, verify=False)
 
 def command_listener(message:str, author:str, db, bot):
     global lastTimeExecuted
