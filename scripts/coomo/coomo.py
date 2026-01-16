@@ -1,8 +1,8 @@
 import os
 import requests
-COMANDO = "!coomo"
+COMANDOS = ["!coomo", "!como"]
 
 
 def command_listener(message, author, db, bot):
-    if message.lower() == COMANDO:
+    if message.lower() in COMANDOS:
         bot.reproducirSonido("coomo")

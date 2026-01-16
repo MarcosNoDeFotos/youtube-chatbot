@@ -27,7 +27,7 @@ class YouTubeChatBot:
     RECOMPENSA_AUTOMATICA = 20
     BOT_NAME = "lord_shit_mndf"
     STREAMER_NAME = "marcosNoDeFotos"
-    SERVER_REPRODUCCION_SONIDO = "https://192.168.1.189"
+    SERVER_REPRODUCCION_SONIDO = "https://192.168.1.188"
     youtube = None
     live_chat_id = None
     video_id = None  # El ID del stream
